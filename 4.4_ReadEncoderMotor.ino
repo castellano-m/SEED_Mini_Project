@@ -17,15 +17,17 @@
  *  - myEnc.write(newPosition)  set the accumlated position to a new number
  *  
  * TO DO: 
- *  - add functionality to this code such that angular position can be re-set to zero  
+ *  - TEST code such that angular position can be re-set to zero  
  *  
  */
 
 #include <Encoder.h>  // Downloaded from https://www.pjrc.com/teensy/td_libs_Encoder.html 
 
 /************************************* VARIABLE DECLARATIONS *************************************/ 
+const int N = 3195;                             // # of turns per one revolution, experimental
+const double fullrotation = 6.22;               // approx angular position when full rotation, experimental
+
 const int pinA = 2; const int pinB = 13;        // ChannelA = pin2(ISR) & ChannelB = pin13
-const int N = 3195;                             // # of turns per one revolution, experimentally determined
 
 Encoder encoder(pinA,pinB);                     // initializing the encoder library 
 
@@ -37,17 +39,20 @@ void setup() {
   Serial.begin(9600); 
 }
 
-
 /********************************************* LOOP *********************************************/ 
 void loop() {
   
-  long countNew = encoder.read(); 
+  long countNew = encoder.read();                         // read in the cumulative count of the encoder
   
-  if (countNew != countPrev) {
-    angularPos = 2.0*PI*(double)countNew/(double)N;
+  if (countNew != countPrev) {                            // if there is a change to the count 
+    angularPos = 2.0*PI*(double)countNew/(double)N;       // calculate angular position 
+    if (abs(angularPos) > fullrotation) encoder.write(0); // reset encoder count to zero, if full rotation
+
+    // print position and angular position
     Serial.print("Position: "); Serial.print(countNew);
     Serial.print(", Angular Position: "); Serial.println(angularPos);   
-    countPrev = countNew; 
+    
+    countPrev = countNew;                                 // set current count to previous count 
   }
 
 }
