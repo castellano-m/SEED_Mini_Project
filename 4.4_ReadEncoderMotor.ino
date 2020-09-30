@@ -46,7 +46,11 @@ void loop() {
   
   if (countNew != countPrev) {                            // if there is a change to the count 
     angularPos = 2.0*PI*(double)countNew/(double)N;       // calculate angular position 
-    if (abs(angularPos) > fullrotation) encoder.write(0); // reset encoder count to zero, if full rotation
+    if (abs(angularPos) > fullrotation) {
+      encoder.write(0);                                   // reset encoder count to zero, if full rotation
+      countNew = 0;                                       // reset position to zero
+      angularPos = 0;                                     // reset angular position to zero
+    }
 
     // print position and angular position
     Serial.print("Position: "); Serial.print(countNew);
