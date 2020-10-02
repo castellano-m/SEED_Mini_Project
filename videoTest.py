@@ -68,6 +68,7 @@ def aruco_location():
     print("Real Distance: ", distance)
     print("Angle: " , angle)
     
+# MAIN
 while True:
     # Get current frame and convert to grayscale. Print frame
     check,frame = video.read()
