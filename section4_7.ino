@@ -25,7 +25,7 @@
 #include <Encoder.h>  // Downloaded from https://www.pjrc.com/teensy/td_libs_Encoder.html 
 
 /************************************* VARIABLE DECLARATIONS *************************************/ 
-const float batteryVoltage = 12.0;              // [V] - voltage available from battery
+const float batteryVoltage = 8;               // [V] - voltage available from battery
 const int N = 3195;                             // # of turns per one revolution, experimental
 const double fullrotation = 6.22;               // approx angular position when full rotation, experimental
 
@@ -41,10 +41,12 @@ static double angularPos_prev = 0;              // [rad] - used to compare previ
 static double angularVel_prev = 0;              // [rad/s] - used to compare previous angular velocity
 double angPos_now;                              // [rad] - used to calculate the current angular position
 
-float errorInteg   = 0;                         // [rad*s] - integral of error
-float kProp         = 1.26059529783407;         // [V/rad] - proportional controller gain
-float kInteg        = 0.539867799412839;        // [V/rad*s] - integral controller gain
-float kDeriv        = 0.0473385613441023;       // [V/rad/s] - derivative controller gain
+double error        = 0;
+float errorInteg    = 0;                         // [rad*s] - integral of error
+float kProp         = 1.25;         // [V/rad] - proportional controller gain
+float kInteg        = 0.53;                      // [V/rad*s] - integral controller gain
+float kDeriv        = 0.3055;       // [V/rad/s] - derivative controller gain
+float errorRange    = 0.2;
 
 Encoder encoder(pinA,pinB);                     // initializing the encoder library 
 
@@ -53,7 +55,7 @@ const int sampling = 50;   //[ms]
 bool dir = 1;                                   // controls the direction of rotation
 
 float motorVoltage  = 0.0;                      // [V] - analog voltage signal to motor
-double desireAngPos = 3.14;                     // [rad] - desired angular position
+double desireAngPos = PI;                     // [rad] - desired angular position
 
 /********************************************* SETUP *********************************************/ 
 void setup() {
@@ -86,19 +88,46 @@ void loop() {
       angularPos_now = 0;                                 // reset angular position to zero
       angularVel = angularVel_prev;
     } else {
-      angularVel = ((double)angularPos_now - (double)angularPos_prev/((double)sampling/(double)1000));
+      angularVel = (((double)angularPos_now - (double)angularPos_prev)/((double)sampling/(double)1000));
       /* 4.7 start */
       // manipulate error to find PWM input to motor
-      if (PI > ((double)desireAngPos - (double)angularPos_now)){    // if the difference between desired position and current position is less than pi rads
-        dir = 1;                                                    // then drive motor counterclockwise
-      } else {
-        dir = 0;                                                    // else drive motor clockwise
+      double signedError = (double)desireAngPos - (double)angularPos_now;
+      /*if (signedError < 0){
+        signedError = 2*PI - signedError;
       }
-      double error = abs((double)desireAngPos - (double)angularPos_now);            // find difference between current position and desired position
+      if (signedError < 0){                                         // if the difference between desired position and current position is negative
+        dir = 0;                                                    // then drive motor counterclockwise
+      } else {
+        dir = 1;                                                    // else drive motor clockwise
+      }*/
+      
+      /*if (angularPos_now < 0){
+        error = (double)desireAngPos - (2*PI - (double)angularPos_now);            // find difference between current position and desired position
+      } else {
+        error = (double)desireAngPos - (double)angularPos_now;            // find difference between current position and desired position
+      }*/
+
+      error = (double)desireAngPos - (double)angularPos_now;            // find difference between current position and desired position
+
+      if(error > fullrotation)    error = error - 2*PI;
+      //Serial.println(error);
       errorInteg += error*((double)sampling/(double)1000);                          // calculate total error integral
-      motorVoltage = (kProp*error) + (kDeriv*angularVel) + (kInteg*errorInteg);     // calculate voltage supplied to motor
-      float dutyCycle = ((float)motorVoltage/(float)batteryVoltage) * (float)255;   // convert motor voltage to PWM
-      digitalWrite(SIGN1, dir);                                                     // set motor direction
+      motorVoltage = ((float)error*(kProp) + (kDeriv*(float)angularVel) + (kInteg*errorInteg));     // calculate voltage supplied to motor
+      if(abs(error) < errorRange)     errorInteg = 0;
+      
+      //if(motorVoltage > batteryVoltage)     errorInteg = 0;
+      
+      if(motorVoltage < 0){
+        digitalWrite(SIGN1, 0);
+      } else {
+        digitalWrite(SIGN1, 1);
+      }
+      Serial.print(error); Serial.print("\t"); Serial.print(motorVoltage); Serial.print("\t"); Serial.println(angularPos_now);
+      if(abs(motorVoltage) > (float)8)    motorVoltage = (float)8;
+      //Serial.println(motorVoltage);
+      float dutyCycle = ((abs((float)motorVoltage)/(float)batteryVoltage)) * (float)255;   // convert motor voltage to PWM
+      
+      //digitalWrite(SIGN1, dir);                                                     // set motor direction
       analogWrite(PWM1, (int)dutyCycle);                                            // drive motor with rounded duty cycle value
       /* 4.7 end */    
     }
