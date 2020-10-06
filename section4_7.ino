@@ -25,7 +25,7 @@
 #include <Encoder.h>  // Downloaded from https://www.pjrc.com/teensy/td_libs_Encoder.html 
 
 /************************************* VARIABLE DECLARATIONS *************************************/ 
-const float batteryVoltage = 8;               // [V] - voltage available from battery
+const float batteryVoltage = 8;                 // [V] - voltage available from battery
 const int N = 3195;                             // # of turns per one revolution, experimental
 const double fullrotation = 6.22;               // approx angular position when full rotation, experimental
 
@@ -42,20 +42,22 @@ static double angularVel_prev = 0;              // [rad/s] - used to compare pre
 double angPos_now;                              // [rad] - used to calculate the current angular position
 
 double error        = 0;
-float errorInteg    = 0;                         // [rad*s] - integral of error
-float kProp         = 1.25;         // [V/rad] - proportional controller gain
-float kInteg        = 0.53;                      // [V/rad*s] - integral controller gain
-float kDeriv        = 0.3055;       // [V/rad/s] - derivative controller gain
-float errorRange    = 0.2;
+float errorInteg    = 0;                        // [rad*s] - integral of error
+float kProp         = 1.25; /*1.25*/                    // [V/rad] - proportional controller gain
+float kInteg        = 0.8; /*0.53*/                     // [V/rad*s] - integral controller gain
+float kDeriv        = 0.25; /*0.3055*/                   // [V/rad/s] - derivative controller gain
+float errorRange    = 0.01;
 
 Encoder encoder(pinA,pinB);                     // initializing the encoder library 
 
 /************************************* VARIABLE TO MANIPULATE *************************************/ 
-const int sampling = 50;   //[ms]
+const int sampling = 50;                        //[ms]
 bool dir = 1;                                   // controls the direction of rotation
 
 float motorVoltage  = 0.0;                      // [V] - analog voltage signal to motor
-double desireAngPos = PI;                     // [rad] - desired angular position
+char  desireAngChar = '3';                        // designates which position the PI is telling the motor to go to
+double desireAngPos = 0;                        // [rad] - goal angular position
+//double desireAngPos = PI;
 
 /********************************************* SETUP *********************************************/ 
 void setup() {
@@ -75,6 +77,15 @@ void setup() {
 /********************************************* LOOP *********************************************/ 
 void loop() {
   timeNow = millis();                                 // monitor the length of time passed in loop
+
+  if(Serial.available() > 0){
+    desireAngChar = Serial.read();
+  }
+
+  if(desireAngChar == '1')      desireAngPos = 0;
+  else if(desireAngChar == '2') desireAngPos = PI/2;
+  else if(desireAngChar == '3') desireAngPos = PI;
+  else if(desireAngChar == '4') desireAngPos = 3*PI/2;
   
   /* 4.4 reads in */
   long countNew = encoder.read();                         // read in the cumulative count of the encoder 
@@ -122,7 +133,7 @@ void loop() {
       } else {
         digitalWrite(SIGN1, 1);
       }
-      Serial.print(error); Serial.print("\t"); Serial.print(motorVoltage); Serial.print("\t"); Serial.println(angularPos_now);
+      //Serial.print(error); Serial.print("\t"); Serial.print(motorVoltage); Serial.print("\t"); Serial.println(angularPos_now);
       if(abs(motorVoltage) > (float)8)    motorVoltage = (float)8;
       //Serial.println(motorVoltage);
       float dutyCycle = ((abs((float)motorVoltage)/(float)batteryVoltage)) * (float)255;   // convert motor voltage to PWM
