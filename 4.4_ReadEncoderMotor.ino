@@ -24,7 +24,7 @@
 #include <Encoder.h>  // Downloaded from https://www.pjrc.com/teensy/td_libs_Encoder.html 
 
 /************************************* VARIABLE DECLARATIONS *************************************/ 
-const int N = 3195;                             // # of turns per one revolution, experimental
+const int N = 3200;                             // # of turns per one revolution, motor data sheet
 const double fullrotation = 6.22;               // approx angular position when full rotation, experimental
 
 const int pinA = 2; const int pinB = 13;        // ChannelA = pin2(ISR) & ChannelB = pin13
