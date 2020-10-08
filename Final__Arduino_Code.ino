@@ -1,5 +1,5 @@
 /* Name: Madison Heeg and Andrew Rouze
- * Date: 30 Sept 2020
+ * Date: 7 October 2020
  * 
  * Title: Mini Project - Final Arduino Code
  * Setup - 
@@ -19,7 +19,7 @@
 #include <Encoder.h>  // Downloaded from https://www.pjrc.com/teensy/td_libs_Encoder.html 
 
 /************************************* VARIABLE DECLARATIONS *************************************/ 
-const float batteryVoltage = 8;               // [V] - voltage available from battery
+const float batteryVoltage = 8;                 // [V] - voltage available from battery
 const int N = 3195;                             // # of turns per one revolution, experimental
 const double fullrotation = 6.22;               // approx angular position when full rotation, experimental
 
